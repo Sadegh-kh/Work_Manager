@@ -4,8 +4,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import androidx.work.*
-import com.example.work_manager.worker.NotificationWorker
-import com.example.work_manager.worker.UserInfoWorker
+import com.example.work_manager.worker.*
 import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
@@ -17,11 +16,12 @@ class MainActivity : AppCompatActivity() {
         workManager = WorkManager.getInstance(this)
 
         //PeriodicWorkRequest or OneTimeWorkRequest
-        val notificationWorker = PeriodicWorkRequestBuilder<NotificationWorker>(1,TimeUnit.HOURS,15,TimeUnit.MINUTES)
-            .build()
+        val notificationWorker =
+            PeriodicWorkRequestBuilder<NotificationWorker>(1, TimeUnit.HOURS, 15, TimeUnit.MINUTES)
+                .build()
 
 
-        val constraints=Constraints.Builder()
+        val constraints = Constraints.Builder()
             .setRequiresBatteryNotLow(true)
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
@@ -38,20 +38,32 @@ class MainActivity : AppCompatActivity() {
             //for same worker
             .addTag("userWorker")
             .setConstraints(constraints)
-            .setInitialDelay(10,TimeUnit.MINUTES)
+            .setInitialDelay(10, TimeUnit.MINUTES)
             .build()
-
-        workManager.enqueue(notificationWorker)
 
         workManager
             .getWorkInfosByTagLiveData("userWorker")
             .observe(this) {
                 val userInfoWorker = it[0]
                 val information = userInfoWorker.outputData.getString("info") ?: "null"
-                if (userInfoWorker.state==WorkInfo.State.SUCCEEDED){
+                if (userInfoWorker.state == WorkInfo.State.SUCCEEDED) {
                     Log.v("testOutputData", information)
                 }
             }
+
+
+        //enqueue Workers and working together
+        workManager.beginWith(OneTimeWorkRequest.from(DownloadImageWorker::class.java))
+            .then(OneTimeWorkRequest.from(EditImageWorker::class.java))
+            .then(OneTimeWorkRequest.from(SavingImageToGalleryWorker::class.java))
+            .enqueue()
+
+        //made an unique worker
+        workManager.enqueueUniqueWork("NotificationWorker",ExistingWorkPolicy.KEEP,
+            OneTimeWorkRequest.from(NotificationWorker::class.java))
+
+
+
     }
 }
 
