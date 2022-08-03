@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.work.*
 import com.example.work_manager.worker.NotificationWorker
 import com.example.work_manager.worker.UserInfoWorker
+import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
     lateinit var workManager: WorkManager
@@ -16,7 +17,8 @@ class MainActivity : AppCompatActivity() {
         workManager = WorkManager.getInstance(this)
 
         //PeriodicWorkRequest or OneTimeWorkRequest
-        val notificationWorker = OneTimeWorkRequest.from(NotificationWorker::class.java)
+        val notificationWorker = PeriodicWorkRequestBuilder<NotificationWorker>(1,TimeUnit.HOURS,15,TimeUnit.MINUTES)
+            .build()
 
 
         val constraints=Constraints.Builder()
@@ -36,9 +38,10 @@ class MainActivity : AppCompatActivity() {
             //for same worker
             .addTag("userWorker")
             .setConstraints(constraints)
+            .setInitialDelay(10,TimeUnit.MINUTES)
             .build()
 
-        workManager.enqueue(userInfoWorker)
+        workManager.enqueue(notificationWorker)
 
         workManager
             .getWorkInfosByTagLiveData("userWorker")
