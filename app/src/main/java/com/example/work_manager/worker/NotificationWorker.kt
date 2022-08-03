@@ -17,8 +17,8 @@ class NotificationWorker(context: Context, workerParams: WorkerParameters) :
     }
 
     private fun doMyJop() {
-        for(i in 0..10000000){
-            Log.v("testWorker","Number is $i")
-        }
+//        for(i in 0..10000000){
+//            Log.v("testWorker","Number is $i")
+//        }
     }
 }
